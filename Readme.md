@@ -1,4 +1,3 @@
-````markdown
 # README — DFEW Emotion Recognition with Frozen LLaVA-NeXT-Video Hidden States
 
 ## Overview
@@ -422,5 +421,3 @@ weighted_mlp_concat_key_layers:
 
 The direct generation baseline is included to compare hidden-state classifiers against the model’s normal text-output behavior.
 
-```
-```
