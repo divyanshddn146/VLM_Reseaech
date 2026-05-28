@@ -1,28 +1,29 @@
+````markdown
 # README — DFEW Emotion Recognition with Frozen LLaVA-NeXT-Video Hidden States
 
 ## Overview
 
 This code evaluates whether frozen hidden states from **LLaVA-NeXT-Video-7B** contain useful information for video emotion recognition on the DFEW dataset.
 
-The main model used is:
+Main model:
 
 ```text
 llava-hf/LLaVA-NeXT-Video-7B-hf
-```
+````
 
 The pipeline is:
 
 1. Run LLaVA-NeXT-Video on DFEW videos.
 2. Extract final-token hidden states from the language-model layers.
-3. Train lightweight classifiers on the frozen hidden states.
-4. Evaluate performance using WAR/accuracy and UAR.
+3. Train lightweight classifiers on frozen hidden states.
+4. Evaluate using WAR/accuracy and UAR.
 5. Compare hidden-state classifiers against the model’s direct text-generation baseline.
 
 No full VLM fine-tuning is performed.
 
 ---
 
-# Important note before running
+## Important note before running
 
 Several scripts contain **absolute file paths** from my local/HPC environment.
 
@@ -37,13 +38,13 @@ CACHE_DIR
 RESULT_DIR
 ```
 
-These should be changed to match the local dataset location, hidden-state cache location, and output directory on the machine where the code is being run.
+These should be changed to match the dataset location, hidden-state cache location, and output directory on the machine where the code is being run.
 
 ---
 
 # Files included
 
-## 1. `recheck.py`
+## 1. `01_extract_hidden_states_and_linear_probe.py`
 
 ### Purpose
 
@@ -69,14 +70,6 @@ Recommended workflow:
 2. Run probe_only to train and evaluate the linear probe without reloading the full VLM.
 ```
 
-### What it produces
-
-This script produces the initial linear-probe results across selected layers:
-
-```text
-L13, L16, L20, L22, L26, L31
-```
-
 ### Main result
 
 Best Set 1 linear-probe result:
@@ -86,17 +79,17 @@ Layer 26 linear probe:
 71.7% WAR / 59.3% UAR
 ```
 
-This result shows that useful emotion-recognition information is already linearly recoverable from frozen LLaVA-NeXT hidden states.
+This shows that useful emotion-recognition information is linearly recoverable from frozen LLaVA-NeXT hidden states.
 
 ---
 
-## 2. `check_uar.py`
+## 2. `02_evaluate_linear_probe_uar.py`
 
 ### Purpose
 
-This is a post-processing script for the linear-probe predictions from `recheck.py`.
+This is a post-processing script for the linear-probe predictions from `01_extract_hidden_states_and_linear_probe.py`.
 
-It reads the per-video predictions produced by the linear probe and computes:
+It computes:
 
 ```text
 Accuracy / WAR
@@ -106,20 +99,18 @@ Best layer by WAR
 Best layer by UAR
 ```
 
-### Main result to confirm
-
-Expected key result:
+### Expected result
 
 ```text
 L26:
 ~71.7% WAR / ~59.3% UAR
 ```
 
-This script is mainly used to confirm the linear-probe baseline.
+This script is used to confirm the linear-probe baseline.
 
 ---
 
-## 3. `best_check.py`
+## 3. `03_run_5fold_hidden_probe_models.py`
 
 ### Purpose
 
@@ -166,13 +157,13 @@ This is the main script for the final hidden-state probing evaluation.
 
 ---
 
-## 4. `agg_best.py`
+## 4. `04_aggregate_5fold_probe_results.py`
 
 ### Purpose
 
-This script aggregates the outputs from `best_check.py`.
+This script aggregates the outputs from `03_run_5fold_hidden_probe_models.py`.
 
-It reads the fold/method outputs and computes:
+It computes:
 
 ```text
 Mean WAR/accuracy across 5 folds
@@ -183,11 +174,7 @@ Mean per-class recall
 Combined score = (WAR + UAR) / 2
 ```
 
-This is the script used to produce the final 5-fold result table.
-
-### Main final 5-fold results
-
-The final 5-fold hidden-state probing results are:
+### Main final 5-fold hidden-state results
 
 | Result type   | Method                           | WAR / Accuracy |        UAR |
 | ------------- | -------------------------------- | -------------: | ---------: |
@@ -215,7 +202,7 @@ L26
 
 ---
 
-## 5. `dfew_generation_baseline.py`
+## 5. `05_run_direct_generation_baseline.py`
 
 ### Purpose
 
@@ -243,11 +230,11 @@ This baseline measures how well the model performs when used normally as a text-
 
 ---
 
-## 6. `agg_base.py`
+## 6. `06_aggregate_generation_baseline.py`
 
 ### Purpose
 
-This script aggregates the direct generation baseline outputs from `dfew_generation_baseline.py`.
+This script aggregates the direct generation baseline outputs from `05_run_direct_generation_baseline.py`.
 
 It reads the generated prediction shards and computes:
 
@@ -260,7 +247,7 @@ Final 5-fold generation baseline result
 
 This script does not run LLaVA-NeXT itself. It only evaluates the saved generation predictions.
 
-`agg_base.py` should be included together with `dfew_generation_baseline.py`.
+`06_aggregate_generation_baseline.py` should be used after `05_run_direct_generation_baseline.py`.
 
 ---
 
@@ -271,7 +258,7 @@ This script does not run LLaVA-NeXT itself. It only evaluates the saved generati
 Run:
 
 ```text
-recheck.py
+01_extract_hidden_states_and_linear_probe.py
 ```
 
 with:
@@ -282,12 +269,14 @@ RUN_MODE=extract_only
 
 This saves the frozen LLaVA-NeXT hidden states.
 
+---
+
 ## Step 2 — Run linear probe
 
 Run:
 
 ```text
-recheck.py
+01_extract_hidden_states_and_linear_probe.py
 ```
 
 with:
@@ -299,7 +288,7 @@ RUN_MODE=probe_only
 Then run:
 
 ```text
-check_uar.py
+02_evaluate_linear_probe_uar.py
 ```
 
 to compute UAR and identify the best linear-probe layer.
@@ -312,12 +301,14 @@ Layer 26
 ~71.7% WAR / ~59.3% UAR
 ```
 
+---
+
 ## Step 3 — Run final 5-fold hidden-state probing
 
 Run:
 
 ```text
-best_check.py
+03_run_5fold_hidden_probe_models.py
 ```
 
 across the 5 folds and 8 selected methods.
@@ -325,7 +316,7 @@ across the 5 folds and 8 selected methods.
 Then run:
 
 ```text
-agg_best.py
+04_aggregate_5fold_probe_results.py
 ```
 
 to aggregate the final 5-fold results.
@@ -346,12 +337,14 @@ balanced_sampler_mlp_L26_p025
 ~64.8% WAR / ~62.3% UAR
 ```
 
+---
+
 ## Step 4 — Run direct generation baseline
 
 Run:
 
 ```text
-dfew_generation_baseline.py
+05_run_direct_generation_baseline.py
 ```
 
 to generate emotion-label predictions from LLaVA-NeXT-Video directly.
@@ -359,7 +352,7 @@ to generate emotion-label predictions from LLaVA-NeXT-Video directly.
 Then run:
 
 ```text
-agg_base.py
+06_aggregate_generation_baseline.py
 ```
 
 to compute the 5-fold generation baseline metrics.
@@ -428,3 +421,6 @@ weighted_mlp_concat_key_layers:
 ```
 
 The direct generation baseline is included to compare hidden-state classifiers against the model’s normal text-output behavior.
+
+```
+```
