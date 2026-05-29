@@ -20,7 +20,7 @@ echo "Start time: $(date)"
 echo "======================================"
 
 python 01_extract_hidden_states_and_linear_probe.py \
-  --run_mode probe_only \
+  --run_mode extract_and_probe \
   --shard_index 0 \
   --shard_count 1
 
